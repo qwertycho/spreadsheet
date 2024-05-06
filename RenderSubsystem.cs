@@ -2,7 +2,6 @@ using System.Text;
 
 public class RenderSubsystem
 {
-
     private List<string> Buffer = new List<string>();
     private static RenderSubsystem _instance = null;
 

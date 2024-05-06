@@ -22,7 +22,7 @@ public class Spreadsheet
     {
         Name = "Sheet1";
 
-        Sheet = new CellData[w, h];
+        Sheet = new CellData[h, w];
         xLength = w;
         yLength = h;
 
@@ -60,7 +60,7 @@ public class Spreadsheet
 
     public static Spreadsheet Load(string path)
     {
-        if(!File.Exists(path))
+        if (!File.Exists(path))
         {
             throw new FileNotFoundException(path);
         }
@@ -121,6 +121,11 @@ public class Spreadsheet
     {
         int maxWidth = 0;
 
+        if (x >= xLength)
+        {
+            throw new IndexOutOfRangeException(x.ToString());
+        }
+
         for (int i = 0; i < yLength; i++)
         {
             CellData tmp = Sheet[i, x];
@@ -147,21 +152,11 @@ public class Spreadsheet
 
         for (int x = 0; x < xLength; x++)
         {
-            try
+            CellData data = Sheet[y, x];
+            if (data != null)
             {
-
-                CellData data = Sheet[y, x];
-                if (data != null)
-                {
-                    datas[x] = data;
-                }
+                datas[x] = data;
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"{x} ---- {y} ---- {ex.Message}");
-                throw;
-            }
-
         }
         return datas;
     }
@@ -171,22 +166,22 @@ public class Spreadsheet
         int newX = ActiveX + xOffset;
         int newY = ActiveY + yOffset;
 
-        if (newX > Sheet.GetLength(0) - 1)
+        if (newX > xLength - 1)
         {
             newX = 0;
         }
         else if (newX < 0)
         {
-            newX = Sheet.GetLength(0) - 1;
+            newX = xLength - 1;
         }
 
-        if (newY > Sheet.GetLength(1) - 1)
+        if (newY > yLength - 1)
         {
             newY = 0;
         }
         else if (newY < 0)
         {
-            newY = Sheet.GetLength(1) - 1;
+            newY = yLength - 1;
         }
 
         //TODO: delete old active if it holds no data
