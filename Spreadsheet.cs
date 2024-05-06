@@ -1,5 +1,10 @@
+using System.Reflection.Metadata;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
+
 public class Spreadsheet
 {
+    private string Name;
     private int xLength;
     private int yLength;
     /// <summary>
@@ -13,11 +18,13 @@ public class Spreadsheet
 
     private bool Changes = false;
 
-    public Spreadsheet()
+    public Spreadsheet(int w, int h)
     {
-        Sheet = new CellData[10, 10];
-        xLength = 10;
-        yLength = 10;
+        Name = "Sheet1";
+
+        Sheet = new CellData[w, h];
+        xLength = w;
+        yLength = h;
 
         Sheet[ActiveX, ActiveY] = new CellData(0, 0);
         ActiveCell = Sheet[ActiveX, ActiveY];
@@ -28,6 +35,86 @@ public class Spreadsheet
         isub.Subscribe(new InputSubSystem.SubscriberData(ConsoleKey.None, GetInputAction(this), false));
 
         Changes = true;
+    }
+
+    public bool HasChanges(bool reset)
+    {
+        bool tmp = Changes;
+        if (reset)
+        {
+            Changes = false;
+        }
+        return tmp;
+    }
+
+    public void SetName(string name)
+    {
+        Name = name;
+        Changes = true;
+    }
+
+    public string GetName()
+    {
+        return Name;
+    }
+
+    public static Spreadsheet Load(string path)
+    {
+        if(!File.Exists(path))
+        {
+            throw new FileNotFoundException(path);
+        }
+
+        string json = File.ReadAllText(path);
+        ExportSpreadsheet export = JsonSerializer.Deserialize<ExportSpreadsheet>(json);
+
+        Spreadsheet sht = new Spreadsheet(export.XLength, export.YLength);
+        sht.Load(export);
+
+        return sht;
+    }
+    public void Load(ExportSpreadsheet export)
+    {
+        Name = export.Name;
+
+        xLength = export.XLength;
+        yLength = export.YLength;
+
+        Sheet = new CellData[yLength, xLength];
+
+        for (int y = 0; y < yLength; y++)
+        {
+            foreach (var x in export.Collumns[y])
+            {
+                Sheet[y, x.Key] = x.Value;
+                if (x.Value.Data.StartsWith("> "))
+                {
+                    ActiveX = x.Key;
+                    ActiveY = y;
+                    ActiveCell = Sheet[y, x.Key];
+                    ActiveCell.Data = ActiveCell.Data.Substring(2);
+                }
+            }
+        }
+
+        ActiveCell.SetActive();
+        Changes = true;
+    }
+
+    public ExportSpreadsheet GetExport()
+    {
+        ExportSpreadsheet export = new ExportSpreadsheet();
+        export.Name = Name;
+        export.XLength = xLength;
+        export.YLength = yLength;
+        export.Collumns = new List<Dictionary<int, CellData>>();
+
+        for (int y = 0; y < yLength; y++)
+        {
+            export.Collumns.Add(GetRow(y));
+        }
+
+        return export;
     }
 
     public int GetMaxWidth(int x)
@@ -53,13 +140,28 @@ public class Spreadsheet
     {
         Dictionary<int, CellData> datas = new Dictionary<int, CellData>();
 
+        if (y >= yLength)
+        {
+            throw new IndexOutOfRangeException(y.ToString());
+        }
+
         for (int x = 0; x < xLength; x++)
         {
-            CellData data = Sheet[y, x];
-            if (data != null)
+            try
             {
-                datas[x] = data;
+
+                CellData data = Sheet[y, x];
+                if (data != null)
+                {
+                    datas[x] = data;
+                }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"{x} ---- {y} ---- {ex.Message}");
+                throw;
+            }
+
         }
         return datas;
     }
@@ -120,11 +222,13 @@ public class Spreadsheet
     public void AddData(char c)
     {
         ActiveCell.Data += c;
+        Changes = true;
     }
 
     public void RemoveData()
     {
         ActiveCell.DeleteLastData();
+        Changes = true;
     }
 
     private Action<InputSubSystem.EventData> GetInputAction(Spreadsheet sht)
@@ -136,17 +240,17 @@ public class Spreadsheet
                 case ConsoleKey.Backspace:
                     sht.RemoveData();
                     break;
-                
+
                 case ConsoleKey.Delete:
                     sht.RemoveData();
                     break;
-                
+
                 case ConsoleKey.Enter:
                     sht.MoveCursor(0, 1);
                     break;
-                
+
                 case ConsoleKey.Spacebar:
-                    ActiveCell.Data += " ";
+                    sht.AddData(' ');
                     break;
 
                 default:
@@ -156,16 +260,17 @@ public class Spreadsheet
 
                         if (!x.IsUpper)
                         {
-                            ActiveCell.Data += ch.ToLower().First();
+                            sht.AddData(ch.ToLower().First());
                         }
                         else
                         {
-                            ActiveCell.Data += ch.First();
+                            sht.AddData(ch.First());
                         }
-                    } else if ((int)x.Key >= 47 && (int)x.Key <=  57)
+                    }
+                    else if ((int)x.Key >= 47 && (int)x.Key <= 57)
                     {
                         int num = Math.Abs(48 - (int)x.Key);
-                        ActiveCell.Data += num.ToString();
+                        sht.AddData(num.ToString().First());
                     }
                     break;
             }
@@ -192,5 +297,21 @@ public class Spreadsheet
                     break;
             }
         });
+    }
+}
+
+public class ExportSpreadsheet
+{
+    public string Name { get; set; }
+    public int XLength { get; set; }
+    public int YLength { get; set; }
+    public List<Dictionary<int, CellData>> Collumns { get; set; }
+
+    public void Save()
+    {
+        string path = $"{Name}.sheet";
+
+        string json = JsonSerializer.Serialize(this);
+        File.WriteAllText(path, json);
     }
 }
