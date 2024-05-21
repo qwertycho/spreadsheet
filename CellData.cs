@@ -27,11 +27,6 @@ public class CellData
         }
     }
 
-    private void Log(string t)
-    {
-        File.AppendAllLines("/home/qwertycho/Desktop/cell.log", new string[] {t});
-    }
-
     private List<KeyValuePair<string, string>> GetRef(Spreadsheet sht)
     {
         string pattern = @"\(\d+,\s*\d+\)";
@@ -44,8 +39,6 @@ public class CellData
         
         foreach (Match match in matches)
         {
-            Log(match.Value.ToString() + " test");
-
             var cordS = match.Value.Replace("(", "").Replace(")", "").Split(',');
             
             int x = int.Parse(cordS[0]);
@@ -84,7 +77,6 @@ public class CellData
             return calculator.Caluculate(tmp).ToString();
             } catch (Exception e)
             {
-                Log(e.Message);
                 return "ERROR";
             }
         }
