@@ -58,6 +58,17 @@ public class Spreadsheet
         return Name;
     }
 
+    public string GetData(int x, int y)
+    {
+        CellData cData = Sheet[y, x];
+        if(cData == null)
+        {
+            return "";
+        } else {
+            return cData.GetData(this);
+        }
+    }
+
     public static Spreadsheet Load(string path)
     {
         if (!File.Exists(path))
@@ -131,9 +142,10 @@ public class Spreadsheet
             CellData tmp = Sheet[i, x];
             if (tmp != null)
             {
-                if (tmp.Data.Length > maxWidth)
+                string dt = tmp.GetData(this);
+                if (dt.Length > maxWidth)
                 {
-                    maxWidth = tmp.Data.Length;
+                    maxWidth = dt.Length;
                 }
             }
         }
@@ -216,7 +228,7 @@ public class Spreadsheet
 
     public void AddData(char c)
     {
-        ActiveCell.Data += c;
+        ActiveCell.AddData(c);
         Changes = true;
     }
 
@@ -249,18 +261,13 @@ public class Spreadsheet
                     break;
 
                 default:
-                    if (((int)x.Key >= 65 && (int)x.Key <= 90) || ((int)x.Key >= 106 && (int)x.Key <= 111))
-                    {
-                        string ch = ((char)x.Key).ToString();
 
-                        if (!x.IsUpper)
-                        {
-                            sht.AddData(ch.ToLower().First());
-                        }
-                        else
-                        {
-                            sht.AddData(ch.First());
-                        }
+
+                 if ((int)x.Info.KeyChar >= 33 && (int)x.Info.KeyChar <= 122)
+                    {
+                        string ch = ((char)x.Info.KeyChar).ToString();
+
+                       sht.AddData(ch.First());
                     }
                     else if ((int)x.Key >= 47 && (int)x.Key <= 57)
                     {

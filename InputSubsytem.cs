@@ -51,6 +51,7 @@ public class InputSubSystem
 
         EventData data = new EventData
         {
+            Info = info,
             IsSpecial = isCommand,
             IsUpper = isUpper,
             Key = info.Key,
@@ -88,6 +89,7 @@ public class InputSubSystem
 
     public class EventData
     {
+        public ConsoleKeyInfo Info {get; set;}
         public ConsoleKey Key { get; set; }
         public bool IsUpper { get; set; }
         public bool IsSpecial { get; set; }

@@ -40,7 +40,7 @@ public class RenderSubsystem
                 CellData? cellData;
                 if (row.TryGetValue(x, out cellData))
                 {
-                    sb.Append(Helpers.PadEnd(cellData.Data, maxRowWidth));
+                    sb.Append(Helpers.PadEnd(cellData.GetData(spreadsheet), maxRowWidth));
                 }
                 else
                 {
